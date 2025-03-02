@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:intl/intl.dart';
+
 import '../../data/models/calculation_model.dart';
 import '../../data/repositories/calculation_repository.dart';
 import '../../domain/usecases/calculator.dart';
@@ -13,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final excavatorController = TextEditingController();
   final dateController = TextEditingController();
-  final shiftController = TextEditingController();
   final shiftTimeController = TextEditingController();
   final loadTimeController = TextEditingController();
   final cycleTimeController = TextEditingController();
@@ -21,7 +23,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final actualTrucksController = TextEditingController();
   final productivityController = TextEditingController();
 
+  String selectedShift = 'Смена 1';
   CalculatorResult? result;
+  String? shortageMessage;
+
+  Timer? _timer;
+  int _elapsedSeconds = 0;
+  TextEditingController? _activeTimerController;
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -32,18 +40,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (picked != null) {
       setState(() {
-        dateController.text = "${picked.day}.${picked.month}.${picked.year}";
+        dateController.text = DateFormat('dd.MM.yyyy HH:mm:ss').format(picked);
+      });
+    }
+  }
+
+  void _startStopwatch(TextEditingController controller) {
+    if (_timer != null && _timer!.isActive) {
+      _timer!.cancel();
+      controller.text = (_elapsedSeconds / 60).toStringAsFixed(2);
+      setState(() {
+        _elapsedSeconds = 0;
+        _activeTimerController = null;
+      });
+    } else {
+      setState(() {
+        _elapsedSeconds = 0;
+        _activeTimerController = controller;
+      });
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          _elapsedSeconds++;
+          controller.text = (_elapsedSeconds / 60).toStringAsFixed(2);
+        });
       });
     }
   }
 
   void calculate() {
     final calculator = Calculator();
+    final repo = CalculationRepository();
 
     final inputModel = CalculationModel(
       excavatorName: excavatorController.text,
       date: DateTime.now(),
-      shift: shiftController.text,
+      shift: selectedShift,
       shiftTime: int.parse(shiftTimeController.text),
       loadTime: double.parse(loadTimeController.text),
       cycleTime: int.parse(cycleTimeController.text),
@@ -57,6 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     final calculatedResult = calculator.calculate(inputModel);
+
+    shortageMessage =
+    calculatedResult.downtime < 0 ? "⚠ НЕХВАТКА САМОСВАЛОВ" : null;
 
     final calculatedModel = CalculationModel(
       excavatorName: inputModel.excavatorName,
@@ -74,12 +108,32 @@ class _HomeScreenState extends State<HomeScreen> {
       downtime: calculatedResult.downtime,
     );
 
-    final repo = CalculationRepository();
     repo.addCalculation(calculatedModel);
 
     setState(() {
       result = calculatedResult;
     });
+  }
+
+  Widget buildTimeField(String label, TextEditingController controller) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(labelText: label),
+            keyboardType: TextInputType.number,
+          ),
+        ),
+        IconButton(
+          icon: Icon(
+            (_activeTimerController == controller) ? Icons.stop : Icons.timer,
+            color: Colors.blue,
+          ),
+          onPressed: () => _startStopwatch(controller),
+        ),
+      ],
+    );
   }
 
   Widget resultCard(String title, String value) {
@@ -88,7 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(title),
-        trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        trailing: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -111,30 +168,29 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: _pickDate,
               readOnly: true,
             ),
-            TextField(
-              controller: shiftController,
+            DropdownButtonFormField<String>(
+              value: selectedShift,
               decoration: const InputDecoration(labelText: 'Смена'),
+              items: ['Смена 1', 'Смена 2', 'Смена 3', 'Смена 4']
+                  .map((shift) => DropdownMenuItem(
+                value: shift,
+                child: Text(shift),
+              ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedShift = value!;
+                });
+              },
             ),
             TextField(
               controller: shiftTimeController,
               decoration: const InputDecoration(labelText: 'Время смены (ч.)'),
               keyboardType: TextInputType.number,
             ),
-            TextField(
-              controller: loadTimeController,
-              decoration: const InputDecoration(labelText: 'Время загрузки А/С (мин.)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: cycleTimeController,
-              decoration: const InputDecoration(labelText: 'Время рейса (Цикла) А/С (мин.)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: approachTimeController,
-              decoration: const InputDecoration(labelText: 'Время подъезда под 1 ковш. (сек.)'),
-              keyboardType: TextInputType.number,
-            ),
+            buildTimeField('Время загрузки А/С (мин.)', loadTimeController),
+            buildTimeField('Время рейса (Цикла) А/С (мин.)', cycleTimeController),
+            buildTimeField('Время подъезда под 1 ковш. (сек.)', approachTimeController),
             TextField(
               controller: actualTrucksController,
               decoration: const InputDecoration(labelText: 'Фактическое количество машин (ед.)'),
@@ -156,6 +212,15 @@ class _HomeScreenState extends State<HomeScreen> {
               resultCard('Плановый объем в смену', '${result!.planVolume} м³'),
               resultCard('Прогнозный объем экскаватора', '${result!.forecastVolume} м³'),
               resultCard('Прогнозное время простоя парка А/С под экскаватором', '${result!.downtime} ч'),
+              if (shortageMessage != null)
+                Text(
+                  shortageMessage!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
             ],
           ],
         ),

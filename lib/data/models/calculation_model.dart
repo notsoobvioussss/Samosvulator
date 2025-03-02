@@ -3,19 +3,19 @@ part 'calculation_model.g.dart';
 
 @HiveType(typeId: 0)
 class CalculationModel extends HiveObject {
-  @HiveField(0) final String excavatorName;
-  @HiveField(1) final DateTime date;
-  @HiveField(2) final String shift;
-  @HiveField(3) final int shiftTime;
-  @HiveField(4) final double loadTime;
-  @HiveField(5) final int cycleTime;
-  @HiveField(6) final int approachTime;
-  @HiveField(7) final double actualTrucks;
-  @HiveField(8) final int productivity;
-  @HiveField(9) final double requiredTrucks;
-  @HiveField(10) final double planVolume;
-  @HiveField(11) final double forecastVolume;
-  @HiveField(12) final double downtime;
+  @HiveField(1) final String excavatorName;
+  @HiveField(2) final DateTime date;
+  @HiveField(3) final String shift;
+  @HiveField(4) final int shiftTime;
+  @HiveField(5) final double loadTime;
+  @HiveField(6) final int cycleTime;
+  @HiveField(7) final int approachTime;
+  @HiveField(8) final double actualTrucks;
+  @HiveField(9) final int productivity;
+  @HiveField(10) final double requiredTrucks;
+  @HiveField(11) final double planVolume;
+  @HiveField(12) final double forecastVolume;
+  @HiveField(13) final double downtime;
 
   CalculationModel({
     required this.excavatorName,
