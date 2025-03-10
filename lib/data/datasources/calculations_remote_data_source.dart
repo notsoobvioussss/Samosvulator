@@ -10,9 +10,8 @@ class CalculationsRemoteDataSource {
   Future<List<CalculationModel>> getCalculations(int userId, String token) async {
     try {
       final response = await dioClient.get(
-        '/record/by-user-id',
-        queryParams: {'id': userId},
-       // token: token,
+        '/authorized/records-by-user-id',
+       token: token,
       );
 
       return (response.data as List)
@@ -29,7 +28,7 @@ class CalculationsRemoteDataSource {
     jsonData["date"] = calculation.date.toUtc().toIso8601String();
     try {
       await dioClient.post(
-        '/authorized/create',
+        '/authorized/create-record',
         data: jsonData,
         token: token,
       );

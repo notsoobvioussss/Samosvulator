@@ -8,7 +8,6 @@ class DioClient {
       baseUrl: "https://api.tomikartemik.ru",
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      //headers: {"Content-Type": "application/json"},
     );
 
     // 🔹 Добавляем Interceptor для логирования
@@ -38,11 +37,10 @@ class DioClient {
     ));
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParams, String? token}) async {
+  Future<Response> get(String path, { String? token}) async {
     return await dio.get(
       path,
-      queryParameters: queryParams,
-     // options: Options(headers: token != null ? {"Authorization": "Bearer $token"} : null),
+      options: Options(headers: token != null ? {"Authorization": "Bearer $token"} : null),
     );
   }
 
