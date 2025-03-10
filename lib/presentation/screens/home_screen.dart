@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/network/dio_client.dart';
+import '../../core/storage/local_storage.dart';
 import '../../data/models/calculation_model.dart';
 import '../../data/repositories/calculation_repository.dart';
+import '../../data/datasources/calculations_local_data_source.dart';
+import '../../data/datasources/calculations_remote_data_source.dart';
 import '../../domain/usecases/calculator.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final DioClient dioClient;
+
+  const HomeScreen({super.key, required this.dioClient});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -23,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final actualTrucksController = TextEditingController();
   final productivityController = TextEditingController();
 
+  late final CalculationRepository repo;
+
   String selectedShift = 'Смена 1';
   CalculatorResult? result;
   String? shortageMessage;
@@ -30,6 +41,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _timer;
   int _elapsedSeconds = 0;
   TextEditingController? _activeTimerController;
+
+  @override
+  void initState() {
+    super.initState();
+    repo = CalculationRepository(
+      localDataSource: CalculationsLocalDataSource(Hive.box<CalculationModel>('calculations')),
+      remoteDataSource: CalculationsRemoteDataSource(widget.dioClient),
+    );
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -40,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (picked != null) {
       setState(() {
-        dateController.text = DateFormat('dd.MM.yyyy HH:mm:ss').format(picked);
+        dateController.text = DateFormat('dd.MM.yyyy').format(picked);
       });
     }
   }
@@ -67,24 +87,31 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void calculate() {
+  Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt("user_id");
+  }
+
+  Future<void> calculate() async {
     final calculator = Calculator();
-    final repo = CalculationRepository();
+
+    final userId = await getUserId(); // Получаем user_id
 
     final inputModel = CalculationModel(
       excavatorName: excavatorController.text,
       date: DateTime.now(),
       shift: selectedShift,
-      shiftTime: int.parse(shiftTimeController.text),
-      loadTime: double.parse(loadTimeController.text),
-      cycleTime: int.parse(cycleTimeController.text),
-      approachTime: int.parse(approachTimeController.text),
-      actualTrucks: double.parse(actualTrucksController.text),
-      productivity: int.parse(productivityController.text),
+      shiftTime: int.tryParse(shiftTimeController.text) ?? 0,
+      loadTime: double.tryParse(loadTimeController.text) ?? 0.0,
+      cycleTime: int.tryParse(cycleTimeController.text) ?? 0,
+      approachTime: int.tryParse(approachTimeController.text) ?? 0,
+      actualTrucks: double.tryParse(actualTrucksController.text) ?? 0.0,
+      productivity: int.tryParse(productivityController.text) ?? 0,
       requiredTrucks: 0,
       planVolume: 0,
       forecastVolume: 0,
       downtime: 0,
+      userId: userId!,
     );
 
     final calculatedResult = calculator.calculate(inputModel);
@@ -92,7 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
     shortageMessage =
     calculatedResult.downtime < 0 ? "⚠ НЕХВАТКА САМОСВАЛОВ" : null;
 
+
     final calculatedModel = CalculationModel(
+      id: inputModel.id,
       excavatorName: inputModel.excavatorName,
       date: inputModel.date,
       shift: inputModel.shift,
@@ -106,18 +135,54 @@ class _HomeScreenState extends State<HomeScreen> {
       planVolume: calculatedResult.planVolume,
       forecastVolume: calculatedResult.forecastVolume,
       downtime: calculatedResult.downtime,
+      userId: userId!,
     );
 
-    repo.addCalculation(calculatedModel);
+    await repo.addCalculation(calculatedModel);
 
     setState(() {
       result = calculatedResult;
     });
   }
 
-  Widget buildTimeField(String label, TextEditingController controller) {
+  Widget resultCard(String title, String value) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(title),
+        trailing: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  void _showHint(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ОК'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget buildTimeField(String label, String hint, TextEditingController controller) {
     return Row(
       children: [
+        IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.blue),
+          onPressed: () => _showHint(hint),
+        ),
         Expanded(
           child: TextField(
             controller: controller,
@@ -136,17 +201,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget resultCard(String title, String value) {
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        title: Text(title),
-        trailing: Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget buildInfoField(String label, String hint, TextEditingController controller) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.blue),
+          onPressed: () => _showHint(hint),
         ),
-      ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(labelText: label),
+            keyboardType: TextInputType.number,
+          ),
+        ),
+      ],
     );
   }
 
@@ -183,24 +252,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
             ),
-            TextField(
-              controller: shiftTimeController,
-              decoration: const InputDecoration(labelText: 'Время смены (ч.)'),
-              keyboardType: TextInputType.number,
-            ),
-            buildTimeField('Время загрузки А/С (мин.)', loadTimeController),
-            buildTimeField('Время рейса (Цикла) А/С (мин.)', cycleTimeController),
-            buildTimeField('Время подъезда под 1 ковш. (сек.)', approachTimeController),
+            buildInfoField('Время смены (ч.)', 'С учетом КТГ и КИО (плановые)\n1 час - обед\n30 мин. ЕТО\n30 мин. пересменка', shiftTimeController),
+            buildTimeField('Время загрузки А/С (мин.)', 'Замер производится на месте выполнения работ', loadTimeController),
+            buildTimeField('Время рейса (Цикла) А/С (мин.)', 'Замер производится на месте выполнения работ', cycleTimeController),
+            buildTimeField('Время подъезда под 1 ковш. (сек.)', 'Замер производится на месте выполнения работ', approachTimeController),
             TextField(
               controller: actualTrucksController,
               decoration: const InputDecoration(labelText: 'Фактическое количество машин (ед.)'),
               keyboardType: TextInputType.number,
             ),
-            TextField(
-              controller: productivityController,
-              decoration: const InputDecoration(labelText: 'Плановая производительность экскаватора в смену (м³/час.)'),
-              keyboardType: TextInputType.number,
-            ),
+            buildInfoField('Плановая производительность экскаватора в смену (м³/час.)', 'Берется из производственной программы', productivityController),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: calculate,

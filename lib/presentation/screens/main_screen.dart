@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'history_screen.dart';
+import 'package:samosvulator/presentation/screens/home_screen.dart';
+import 'package:samosvulator/presentation/screens/history_screen.dart';
+
+import '../../core/network/dio_client.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final DioClient dioClient;
+
+  const MainScreen({super.key, required this.dioClient});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -11,10 +15,14 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
-  final screens = const [HomeScreen(), HistoryScreen()];
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      HomeScreen(dioClient: widget.dioClient),
+      HistoryScreen(dioClient: widget.dioClient),
+    ];
+
     return Scaffold(
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(

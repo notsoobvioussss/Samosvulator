@@ -1,35 +1,86 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import '../../core/network/dio_client.dart';
+import '../../data/datasources/calculations_local_data_source.dart';
+import '../../data/datasources/calculations_remote_data_source.dart';
 import '../../data/repositories/calculation_repository.dart';
-import "package:intl/intl.dart";
+import '../../data/models/calculation_model.dart';
+import '../../core/storage/local_storage.dart'; // Для получения userId и token
 
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
+class HistoryScreen extends StatefulWidget {
+  final DioClient dioClient;
+
+  const HistoryScreen({super.key, required this.dioClient});
+
+  @override
+  _HistoryScreenState createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  late final CalculationRepository repo;
+  late final int userId;
+  late final String token;
+  late Future<List<CalculationModel>> _calculationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    repo = CalculationRepository(
+      localDataSource: CalculationsLocalDataSource(Hive.box<CalculationModel>('calculations')),
+      remoteDataSource: CalculationsRemoteDataSource(widget.dioClient),
+    );
+
+    _calculationsFuture = _loadData();
+  }
+
+  Future<List<CalculationModel>> _loadData() async {
+
+    await repo.syncCalculations(); // 🔹 Синхронизируем данные
+    return repo.getCalculations(); // 🔹 Возвращаем данные для FutureBuilder
+  }
 
   @override
   Widget build(BuildContext context) {
-    final calculations = CalculationRepository().getCalculations();
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm:ss');
 
     return Scaffold(
       appBar: AppBar(title: const Text('История расчётов')),
-      body: ListView.builder(
-        itemCount: calculations.length,
-        itemBuilder: (context, index) {
-          final calc = calculations[index];
-          final formattedDate = dateFormat.format(calc.date);
-          return Card(
-            child: ListTile(
-              title: Text('Расчёт от $formattedDate'),
-              subtitle: Text('Экскаватор: ${calc.excavatorName}'),
-              onTap: () => showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
+      body: FutureBuilder<List<CalculationModel>>(
+        future: _calculationsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Ошибка: ${snapshot.error}'));
+          }
+          final calculations = snapshot.data ?? [];
+
+          if (calculations.isEmpty) {
+            return const Center(child: Text('Нет сохранённых расчётов'));
+          }
+
+          return ListView.builder(
+            itemCount: calculations.length,
+            itemBuilder: (context, index) {
+              final calc = calculations[index];
+              final formattedDate = dateFormat.format(calc.date);
+
+              return Card(
+                child: ListTile(
                   title: Text('Расчёт от $formattedDate'),
-                  content: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('''
+                  subtitle: Text('Экскаватор: ${calc.excavatorName}'),
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text('Расчёт от $formattedDate'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('''
 Название экскаватора: ${calc.excavatorName}
 Дата: ${formattedDate}
 Смена: ${calc.shift}
@@ -43,31 +94,33 @@ class HistoryScreen extends StatelessWidget {
 Плановый объем в смену (м³.): ${calc.planVolume}
 Прогнозный объем экскаватора (м³.): ${calc.forecastVolume}
 Прогнозное время простоя парка А/С под экскаватором (ч.): ${calc.downtime}
-                        '''),
-                        if (calc.downtime < 0)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10),
-                            child: Text(
-                              "⚠ НЕХВАТКА САМОСВАЛОВ",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            '''),
+                            if (calc.downtime < 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(
+                                  "⚠ НЕХВАТКА САМОСВАЛОВ",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Закрыть'),
+                        ),
                       ],
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Закрыть'),
-                    ),
-                  ],
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
