@@ -11,7 +11,6 @@ class CalculationsLocalDataSource {
   }
 
   Future<void> saveCalculations(List<CalculationModel> calculations) async {
-    await calculationsBox.clear();
     for (var calculation in calculations) {
       await calculationsBox.put(calculation.id, calculation);
     }

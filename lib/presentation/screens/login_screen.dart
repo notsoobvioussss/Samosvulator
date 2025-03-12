@@ -15,7 +15,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Вход")),
+      appBar: AppBar(
+        title: const Text("Вход"),
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -46,10 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         // Отправляем событие в AuthBloc
-                        context.read<AuthBloc>().add(LoginEvent(
-                          username: _usernameController.text,
-                          password: _passwordController.text,
-                        ));
+                        context.read<AuthBloc>().add(
+                          LoginEvent(
+                            username: _usernameController.text,
+                            password: _passwordController.text,
+                          ),
+                        );
                       }
                     },
                     child: const Text("Войти"),
@@ -63,9 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (state is AuthSuccess) {
                     Navigator.pushReplacementNamed(context, "/main");
                   } else if (state is AuthFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(state.message)));
                   }
                 },
                 child: const SizedBox(),

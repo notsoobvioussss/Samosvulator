@@ -13,7 +13,7 @@ class CalculationsRemoteDataSource {
 
   /// ✅ Получение всех расчётов по user_id
   Future<List<CalculationModel>> fetchCalculations(int userId, String token) async {
-    final response = await dioClient.get("/record/by-user-id", queryParams: {"id": userId}, token: token);
+    final response = await dioClient.get("/record/by-user-id", token: token);
     return (response.data as List).map((json) => CalculationModel.fromJson(json)).toList();
   }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:android="http://schemas.android.com/apk/res/android">
+    <jobService android:permission="android.permission.BIND_JOB_SERVICE">
+        <meta-data android:name="com.transistorsoft.flutter.backgroundfetch.FETCH_JOB_ID" android:value="999"/>
+    </jobService>
+</config>

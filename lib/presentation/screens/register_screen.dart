@@ -21,7 +21,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Регистрация")),
+      appBar: AppBar(
+        title: const Text("Регистрация"),
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -32,15 +35,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _usernameController,
                   decoration: const InputDecoration(labelText: "Логин"),
-                  validator: (value) =>
-                  value!.isEmpty ? "Введите логин" : null,
+                  validator: (value) => value!.isEmpty ? "Введите логин" : null,
                 ),
                 TextFormField(
                   controller: _passwordController,
                   decoration: const InputDecoration(labelText: "Пароль"),
                   obscureText: true,
-                  validator: (value) =>
-                  value!.isEmpty ? "Введите пароль" : null,
+                  validator:
+                      (value) => value!.isEmpty ? "Введите пароль" : null,
                 ),
                 TextFormField(
                   controller: _nameController,
@@ -68,9 +70,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (state is AuthSuccess) {
                       Navigator.pushReplacementNamed(context, "/login");
                     } else if (state is AuthFailure) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(state.message)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(state.message)));
                     }
                   },
                   builder: (context, state) {
@@ -80,15 +82,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          context.read<AuthBloc>().add(RegisterEvent(
-                            username: _usernameController.text,
-                            password: _passwordController.text,
-                            name: _nameController.text,
-                            surname: _surnameController.text,
-                            company: _companyController.text,
-                            section: _sectionController.text,
-                            jobTitle: _jobTitleController.text,
-                          ));
+                          context.read<AuthBloc>().add(
+                            RegisterEvent(
+                              username: _usernameController.text,
+                              password: _passwordController.text,
+                              name: _nameController.text,
+                              surname: _surnameController.text,
+                              company: _companyController.text,
+                              section: _sectionController.text,
+                              jobTitle: _jobTitleController.text,
+                            ),
+                          );
                         }
                       },
                       child: const Text("Зарегистрироваться"),

@@ -41,7 +41,7 @@ dependencies:
   flutter_bloc: ^8.1.3 # Управление состоянием
   internet_connection_checker: ^1.0.0+1 # Проверка интернета
   intl: ^0.18.1  # DateFormat
-
+  background_fetch: ^1.3.7
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

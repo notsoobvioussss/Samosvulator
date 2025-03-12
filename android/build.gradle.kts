@@ -2,6 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // [required] background_fetch
+        maven(url = "${project(":background_fetch").projectDir}/libs")
     }
 }
 
@@ -15,7 +17,6 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
-
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

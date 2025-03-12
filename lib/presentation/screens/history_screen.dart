@@ -28,7 +28,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void initState() {
     super.initState();
     repo = CalculationRepository(
-      localDataSource: CalculationsLocalDataSource(Hive.box<CalculationModel>('calculations')),
+      localDataSource: CalculationsLocalDataSource(
+        Hive.box<CalculationModel>('calculations'),
+      ),
       remoteDataSource: CalculationsRemoteDataSource(widget.dioClient),
     );
 
@@ -36,7 +38,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<List<CalculationModel>> _loadData() async {
-
     await repo.syncCalculations(); // 🔹 Синхронизируем данные
     return repo.getCalculations(); // 🔹 Возвращаем данные для FutureBuilder
   }
@@ -46,7 +47,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm:ss');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('История расчётов')),
+      appBar: AppBar(
+        title: const Text('История расчётов'),
+        automaticallyImplyLeading: false,
+      ),
       body: FutureBuilder<List<CalculationModel>>(
         future: _calculationsFuture,
         builder: (context, snapshot) {
@@ -66,21 +70,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
             itemCount: calculations.length,
             itemBuilder: (context, index) {
               final calc = calculations[index];
-              final formattedDate = dateFormat.format(calc.date);
+              final formattedDate = dateFormat.format(calc.date.toLocal());
 
               return Card(
                 child: ListTile(
                   title: Text('Расчёт от $formattedDate'),
                   subtitle: Text('Экскаватор: ${calc.excavatorName}'),
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text('Расчёт от $formattedDate'),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('''
+                  onTap:
+                      () => showDialog(
+                        context: context,
+                        builder:
+                            (_) => AlertDialog(
+                              title: Text('Расчёт от $formattedDate'),
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('''
 Название экскаватора: ${calc.excavatorName}
 Дата: ${formattedDate}
 Смена: ${calc.shift}
@@ -93,31 +99,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
 Потребность А/С (ед.): ${calc.requiredTrucks}
 Плановый объем в смену (м³.): ${calc.planVolume}
 Прогнозный объем экскаватора (м³.): ${calc.forecastVolume}
-Прогнозное время простоя парка А/С под экскаватором (ч.): ${calc.downtime}
+${calc.downtime >= 0 ? "Прогнозное время простоя парка А/С под экскаватором (ч.)" : "Прогнозное время простоя экскаватора, в ожидании автосамосвалов (ч.)"}: ${calc.downtime}
                             '''),
-                            if (calc.downtime < 0)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Text(
-                                  "⚠ НЕХВАТКА САМОСВАЛОВ",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                    if (calc.downtime < 0)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 10),
+                                        child: Text(
+                                          "⚠ НЕХВАТКА САМОСВАЛОВ",
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Закрыть'),
+                                ),
+                              ],
+                            ),
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Закрыть'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               );
             },

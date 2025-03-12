@@ -91,7 +91,7 @@ class CalculationModel {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       "excavator_name": excavatorName,
-      "date": date.toIso8601String(),
+      "date": date.toUtc().toIso8601String(),
       "shift": shift,
       "shift_time": shiftTime,
       "load_time": loadTime,
