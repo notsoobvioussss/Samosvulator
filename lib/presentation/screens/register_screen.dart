@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../blocs/auth_bloc.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -9,7 +8,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _surnameController = TextEditingController();
@@ -18,12 +17,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _jobTitleController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  /// Функция валидации email
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Введите email";
+    }
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    if (!emailRegex.hasMatch(value)) {
+      return "Введите корректный email";
+    }
+    return null;
+  }
+
+  /// Функция валидации пароля
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Введите пароль";
+    }
+    if (value.length < 6) {
+      return "Пароль должен содержать минимум 6 символов";
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Регистрация"),
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false, // Убираем стрелку назад
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -33,24 +55,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               children: [
                 TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: "Логин"),
-                  validator: (value) => value!.isEmpty ? "Введите логин" : null,
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: "Email"),
+                  validator: _validateEmail,
                 ),
                 TextFormField(
                   controller: _passwordController,
                   decoration: const InputDecoration(labelText: "Пароль"),
                   obscureText: true,
-                  validator:
-                      (value) => value!.isEmpty ? "Введите пароль" : null,
+                  validator: _validatePassword,
                 ),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: "Имя"),
+                  validator: (value) => value!.isEmpty ? "Введите имя" : null,
                 ),
                 TextFormField(
                   controller: _surnameController,
                   decoration: const InputDecoration(labelText: "Фамилия"),
+                  validator:
+                      (value) => value!.isEmpty ? "Введите фамилию" : null,
                 ),
                 TextFormField(
                   controller: _companyController,
@@ -84,7 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (_formKey.currentState!.validate()) {
                           context.read<AuthBloc>().add(
                             RegisterEvent(
-                              username: _usernameController.text,
+                              username: _emailController.text,
+                              // Email вместо username
                               password: _passwordController.text,
                               name: _nameController.text,
                               surname: _surnameController.text,

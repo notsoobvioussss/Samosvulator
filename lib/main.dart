@@ -3,6 +3,8 @@ import 'dart:io'; // Проверка платформы
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:samosvulator/presentation/screens/change_password_screen.dart';
+import 'package:samosvulator/presentation/screens/forgot_password_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:background_fetch/background_fetch.dart';
@@ -75,6 +77,8 @@ class MyApp extends StatelessWidget {
           "/login": (context) => LoginScreen(),
           "/register": (context) => RegisterScreen(),
           "/main": (context) => MainScreen(dioClient: dioClient),
+          "/forgot-password": (context) => ForgotPasswordScreen(),
+          "/change-password": (context) => ChangePasswordScreen(dioClient: dioClient),
         },
       ),
     );

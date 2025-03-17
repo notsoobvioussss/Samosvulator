@@ -9,6 +9,7 @@ import '../../data/repositories/calculation_repository.dart';
 import '../../data/datasources/calculations_local_data_source.dart';
 import '../../data/datasources/calculations_remote_data_source.dart';
 import '../../domain/usecases/calculator.dart';
+import 'change_password_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final DioClient dioClient;
@@ -67,6 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
       shiftChangeTimeController.text = prefs.getString('shiftChangeTime') ?? '';
       otherTimeController.text = prefs.getString('otherTime') ?? '';
     });
+  }
+
+  void _navigateToChangePassword() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChangePasswordScreen(dioClient: widget.dioClient),
+      ),
+    );
   }
 
   // Сохранение значений времени
@@ -148,19 +158,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // Расчет
   Future<void> calculate() async {
     final calculator = Calculator();
-
     final userId = await getUserId();
 
-    // Расчет времени смены
+    if (userId == null) {
+      _showErrorMessage("Ошибка: Не удалось получить ID пользователя.");
+      return;
+    }
+
+    // Расчёт времени смены
     final baseShiftTime = double.tryParse(baseShiftTimeController.text) ?? 12.0;
     final lunchTime = double.tryParse(lunchTimeController.text) ?? 0.0;
     final etoTime = double.tryParse(etoTimeController.text) ?? 0.0;
-    final shiftChangeTime =
-        double.tryParse(shiftChangeTimeController.text) ?? 0.0;
+    final shiftChangeTime = double.tryParse(shiftChangeTimeController.text) ?? 0.0;
     final otherTime = double.tryParse(otherTimeController.text) ?? 0.0;
-    final shiftTime =
-        (baseShiftTime - lunchTime - etoTime - shiftChangeTime - otherTime)
-            .toInt();
+    final shiftTime = (baseShiftTime - lunchTime - etoTime - shiftChangeTime - otherTime).toInt();
 
     final inputModel = CalculationModel(
       excavatorName: excavatorController.text,
@@ -176,13 +187,18 @@ class _HomeScreenState extends State<HomeScreen> {
       planVolume: 0,
       forecastVolume: 0,
       downtime: 0,
-      userId: userId!,
+      userId: userId,
     );
 
     final calculatedResult = calculator.calculate(inputModel);
 
-    shortageMessage =
-        calculatedResult.downtime < 0 ? "⚠ НЕХВАТКА САМОСВАЛОВ" : null;
+    // 🔹 Проверка валидности результата перед сохранением
+    if (!isValidCalculationResult(calculatedResult)) {
+      _showErrorMessage("Ошибка: Расчёт содержит некорректные значения.");
+      return;
+    }
+
+    shortageMessage = calculatedResult.downtime < 0 ? "⚠ НЕХВАТКА САМОСВАЛОВ" : null;
 
     final calculatedModel = CalculationModel(
       id: inputModel.id,
@@ -199,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
       planVolume: calculatedResult.planVolume,
       forecastVolume: calculatedResult.forecastVolume,
       downtime: calculatedResult.downtime,
-      userId: userId!,
+      userId: userId,
     );
 
     await repo.addCalculation(calculatedModel);
@@ -259,7 +275,15 @@ class _HomeScreenState extends State<HomeScreen> {
           child: TextField(
             controller: controller,
             decoration: InputDecoration(labelText: label),
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            onChanged: (value) {
+              setState(() {
+                controller.text = value.replaceAll(',', '.');
+                controller.selection = TextSelection.fromPosition(
+                  TextPosition(offset: controller.text.length),
+                );
+              });
+            },
           ),
         ),
         IconButton(
@@ -289,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: TextField(
             controller: controller,
             decoration: InputDecoration(labelText: label),
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
         ),
         IconButton(
@@ -319,20 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: TextField(
             controller: controller,
             decoration: InputDecoration(labelText: label),
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
         ),
       ],
     );
-  }
-
-  // Выход из системы
-  Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
   }
 
   @override
@@ -344,7 +359,11 @@ class _HomeScreenState extends State<HomeScreen> {
           title: const Text('Самосвулятор'),
           automaticallyImplyLeading: false,
           actions: [
-            IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+            IconButton(
+              icon: const Icon(Icons.lock_outline), // Иконка смены пароля
+              onPressed: _navigateToChangePassword,
+              tooltip: "Сменить пароль",
+            ),
           ],
         ),
         body: SingleChildScrollView(
@@ -386,29 +405,77 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Базовое время смены (ч.)',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    baseShiftTimeController.text = value.replaceAll(',', '.');
+                    baseShiftTimeController
+                        .selection = TextSelection.fromPosition(
+                      TextPosition(offset: baseShiftTimeController.text.length),
+                    );
+                  });
+                },
               ),
+
               TextField(
                 controller: lunchTimeController,
                 decoration: const InputDecoration(
                   labelText: 'Время на обед (ч.)',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    lunchTimeController.text = value.replaceAll(',', '.');
+                    lunchTimeController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: lunchTimeController.text.length),
+                    );
+                  });
+                },
               ),
+
               TextField(
                 controller: etoTimeController,
                 decoration: const InputDecoration(labelText: 'ЕТО (ч.)'),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    etoTimeController.text = value.replaceAll(',', '.');
+                    etoTimeController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: etoTimeController.text.length),
+                    );
+                  });
+                },
               ),
+
               TextField(
                 controller: shiftChangeTimeController,
                 decoration: const InputDecoration(labelText: 'Пересменка (ч.)'),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    shiftChangeTimeController.text = value.replaceAll(',', '.');
+                    shiftChangeTimeController
+                        .selection = TextSelection.fromPosition(
+                      TextPosition(
+                        offset: shiftChangeTimeController.text.length,
+                      ),
+                    );
+                  });
+                },
               ),
+
               TextField(
                 controller: otherTimeController,
                 decoration: const InputDecoration(labelText: 'Другое (ч.)'),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    otherTimeController.text = value.replaceAll(',', '.');
+                    otherTimeController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: otherTimeController.text.length),
+                    );
+                  });
+                },
               ),
               buildTimeField(
                 'Время загрузки А/С (мин.)',
@@ -430,10 +497,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Фактическое количество машин (ед.)',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  setState(() {
+                    actualTrucksController.text = value.replaceAll(',', '.');
+                    actualTrucksController
+                        .selection = TextSelection.fromPosition(
+                      TextPosition(offset: actualTrucksController.text.length),
+                    );
+                  });
+                },
               ),
               buildInfoField(
-                'Плановая производительность экскаватора в смену (м³/час.)',
+                'Плановая производительность экскаватора в час (м³/час.)',
                 'Берется из производственной программы',
                 productivityController,
               ),
@@ -473,6 +549,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  bool isValidCalculationResult(CalculatorResult result) {
+    return result.requiredTrucks != null &&
+        result.requiredTrucks > 0 &&
+        result.planVolume != null &&
+        result.planVolume > 0 &&
+        result.forecastVolume != null &&
+        result.forecastVolume > 0 &&
+        result.downtime != null &&
+        !result.downtime.isNaN;
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
       ),
     );
   }

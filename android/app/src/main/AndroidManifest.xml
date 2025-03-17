@@ -3,10 +3,12 @@
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    ,
 
     <application
         tools:replace="android:label"
-        android:label="samosvulator"
+        android:label="Samosvulator"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         tools:targetApi="donut">

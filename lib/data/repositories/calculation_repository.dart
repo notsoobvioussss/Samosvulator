@@ -52,7 +52,7 @@ class CalculationRepository {
       return localData;
     }
 
-    if (await InternetConnectionChecker().hasConnection) {
+    if (await InternetConnectionChecker.createInstance().hasConnection) {
       print("🌍 Интернет доступен, загружаем данные с сервера...");
       try {
         final serverData = await remoteDataSource.getCalculations(userId, token);
@@ -124,7 +124,7 @@ class CalculationRepository {
       return;
     }
 
-    if (await InternetConnectionChecker().hasConnection) {
+    if (await InternetConnectionChecker.createInstance().hasConnection) {
       print("🌍 Интернет доступен, синхронизируем данные...");
 
       final localData = await localDataSource.getCalculations();

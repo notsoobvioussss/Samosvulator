@@ -34,14 +34,16 @@ dependencies:
   shared_preferences: ^2.2.0 # Для хранения токена
   hive: ^2.2.3 # Для локального хранения расчетов
   hive_flutter: ^1.1.0 # Для удобной работы с Hive
-  get_it: ^7.6.0 # Для внедрения зависимостей
+  get_it: ^8.0.3 # Для внедрения зависимостей
   injectable: ^2.3.0 # Автоматизация DI
   json_annotation: ^4.8.1 # Для работы с JSON
-  freezed_annotation: ^2.4.1 # Генерация моделей
-  flutter_bloc: ^8.1.3 # Управление состоянием
-  internet_connection_checker: ^1.0.0+1 # Проверка интернета
-  intl: ^0.18.1  # DateFormat
-  background_fetch: ^1.3.7
+  freezed_annotation: ^3.0.0 # Генерация моделей
+  flutter_bloc: ^9.1.0 # Управление состоянием
+  internet_connection_checker: ^3.0.1 # Проверка интернета
+  intl: ^0.20.2  # DateFormat
+  background_fetch:
+    git:
+      url: https://github.com/transistorsoft/flutter_background_fetch
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -52,7 +54,7 @@ dev_dependencies:
     sdk: flutter
   build_runner: ^2.4.6
   json_serializable: ^6.7.1
-  freezed: ^2.3.2
+  freezed: ^3.0.0-0.0.dev
   injectable_generator: ^2.3.0
   hive_generator: ^2.0.0
 
@@ -104,3 +106,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
