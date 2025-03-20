@@ -19,7 +19,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       final dio = Dio();
       final response = await dio.get(
-        'https://api.tomikartemik.ru/user/change-password',
+        'https://samosvulator.sytes.net/user/change-password',
         queryParameters: {'username': _emailController.text},
       );
 

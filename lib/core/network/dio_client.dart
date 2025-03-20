@@ -5,7 +5,7 @@ class DioClient {
 
   DioClient(this.dio) {
     dio.options = BaseOptions(
-      baseUrl: "https://api.tomikartemik.ru",
+      baseUrl: "https://samosvulator.sytes.net",
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     );

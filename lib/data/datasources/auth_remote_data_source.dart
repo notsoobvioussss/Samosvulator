@@ -4,7 +4,7 @@ class AuthRemoteDataSource {
   final Dio dio;
 
   AuthRemoteDataSource({required this.dio}) {
-    dio.options.baseUrl = "https://api.tomikartemik.ru"; // Указываем базовый URL
+    dio.options.baseUrl = "https://samosvulator.sytes.net"; // Указываем базовый URL
   }
 
   Future<Map<String, dynamic>> login(String username, String password) async {
