@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final etoTime = double.tryParse(etoTimeController.text) ?? 0.0;
     final shiftChangeTime = double.tryParse(shiftChangeTimeController.text) ?? 0.0;
     final otherTime = double.tryParse(otherTimeController.text) ?? 0.0;
-    final shiftTime = (baseShiftTime - lunchTime - etoTime - shiftChangeTime - otherTime).toInt();
+    final shiftTime = (baseShiftTime - lunchTime - etoTime - shiftChangeTime - otherTime);
 
     final inputModel = CalculationModel(
       excavatorName: excavatorController.text,
@@ -179,10 +179,10 @@ class _HomeScreenState extends State<HomeScreen> {
       shift: selectedShift,
       shiftTime: shiftTime,
       loadTime: double.tryParse(loadTimeController.text) ?? 0.0,
-      cycleTime: int.tryParse(cycleTimeController.text) ?? 0,
-      approachTime: int.tryParse(approachTimeController.text) ?? 0,
+      cycleTime: double.tryParse(cycleTimeController.text) ?? 0.0,
+      approachTime: double.tryParse(approachTimeController.text) ?? 0.0,
       actualTrucks: double.tryParse(actualTrucksController.text) ?? 0.0,
-      productivity: int.tryParse(productivityController.text) ?? 0,
+      productivity: double.tryParse(productivityController.text) ?? 0.0,
       requiredTrucks: 0,
       planVolume: 0,
       forecastVolume: 0,

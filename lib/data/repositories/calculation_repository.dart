@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
 
 import '../datasources/calculations_local_data_source.dart';
 import '../datasources/calculations_remote_data_source.dart';

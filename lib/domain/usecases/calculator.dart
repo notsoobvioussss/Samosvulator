@@ -1,8 +1,7 @@
 import '../../data/models/calculation_model.dart';
 
 class CalculatorResult {
-  final double requiredTrucks, planVolume, forecastVolume, downtime;
-  final int shiftTime;
+  final double requiredTrucks, planVolume, forecastVolume, downtime, shiftTime;
 
   CalculatorResult({
     required this.requiredTrucks,

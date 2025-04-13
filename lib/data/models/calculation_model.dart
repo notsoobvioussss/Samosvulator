@@ -7,60 +7,60 @@ part 'calculation_model.g.dart';
 @JsonSerializable()
 class CalculationModel {
   @HiveField(0)
-  int? id;
+  int? id; // Оставляем int, так как это идентификатор
 
   @HiveField(1)
-  @JsonKey(name: 'excavator_name') // ✅ Соответствует API
+  @JsonKey(name: 'excavator_name')
   final String excavatorName;
 
   @HiveField(2)
-  @JsonKey(fromJson: _fromJson, toJson: _toJson) // ✅ Преобразование даты
+  @JsonKey(fromJson: _fromJson, toJson: _toJson)
   final DateTime date;
 
   @HiveField(3)
   final String shift;
 
   @HiveField(4)
-  @JsonKey(name: 'shift_time') // ✅ Соответствует API
-  final int shiftTime;
+  @JsonKey(name: 'shift_time')
+  final double shiftTime; // Изменено с int на double
 
   @HiveField(5)
-  @JsonKey(name: 'load_time') // ✅ Соответствует API
+  @JsonKey(name: 'load_time')
   final double loadTime;
 
   @HiveField(6)
-  @JsonKey(name: 'cycle_time') // ✅ Соответствует API
-  final int cycleTime;
+  @JsonKey(name: 'cycle_time')
+  final double cycleTime; // Изменено с int на double
 
   @HiveField(7)
-  @JsonKey(name: 'approach_time') // ✅ Соответствует API
-  final int approachTime;
+  @JsonKey(name: 'approach_time')
+  final double approachTime; // Изменено с int на double
 
   @HiveField(8)
-  @JsonKey(name: 'actual_trucks') // ✅ Соответствует API
+  @JsonKey(name: 'actual_trucks')
   final double actualTrucks;
 
   @HiveField(9)
-  final int productivity;
+  final double productivity; // Изменено с int на double
 
   @HiveField(10)
-  @JsonKey(name: 'required_trucks') // ✅ Соответствует API
+  @JsonKey(name: 'required_trucks')
   final double requiredTrucks;
 
   @HiveField(11)
-  @JsonKey(name: 'plan_volume') // ✅ Соответствует API
+  @JsonKey(name: 'plan_volume')
   final double planVolume;
 
   @HiveField(12)
-  @JsonKey(name: 'forecast_volume') // ✅ Соответствует API
+  @JsonKey(name: 'forecast_volume')
   final double forecastVolume;
 
   @HiveField(13)
   final double downtime;
 
   @HiveField(14)
-  @JsonKey(name: 'user_id') // ✅ Добавлено в модель
-  final int userId;
+  @JsonKey(name: 'user_id')
+  final int userId; // Оставляем int, так как это идентификатор пользователя
 
   CalculationModel({
     this.id,
@@ -77,17 +77,15 @@ class CalculationModel {
     required this.planVolume,
     required this.forecastVolume,
     required this.downtime,
-    required this.userId, // ✅ Добавили в модель
+    required this.userId,
   });
 
-  /// **Функции для конвертации `DateTime` ⇄ `String`**
   static DateTime _fromJson(String date) => DateTime.parse(date);
   static String _toJson(DateTime date) => date.toIso8601String();
 
-  /// **Генерируемый метод `fromJson`**
-  factory CalculationModel.fromJson(Map<String, dynamic> json) => _$CalculationModelFromJson(json);
+  factory CalculationModel.fromJson(Map<String, dynamic> json) =>
+      _$CalculationModelFromJson(json);
 
-  /// **Генерируемый метод `toJson`**
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       "excavator_name": excavatorName,
@@ -106,9 +104,7 @@ class CalculationModel {
       "user_id": userId,
     };
 
-    // ❌ Удаляем id, если он null (чтобы вообще не отправлять)
     data.removeWhere((key, value) => value == null);
-
     return data;
   }
 }
